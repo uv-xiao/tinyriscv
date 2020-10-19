@@ -1,0 +1,26 @@
+../../rtl/core/if_id.v:41: error: Unknown module type: gen_pipe_dff
+../../rtl/core/if_id.v:45: error: Unknown module type: gen_pipe_dff
+../../rtl/core/if_id.v:49: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:60: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:64: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:68: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:72: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:76: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:80: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:84: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:88: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:92: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:96: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:100: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:104: error: Unknown module type: gen_pipe_dff
+../../rtl/core/id_ex.v:108: error: Unknown module type: gen_pipe_dff
+../../rtl/debug/jtag_driver.v:272: error: Unknown module type: full_handshake_tx
+../../rtl/debug/jtag_driver.v:285: error: Unknown module type: full_handshake_rx
+../../rtl/debug/jtag_dm.v:319: error: Unknown module type: full_handshake_tx
+../../rtl/debug/jtag_dm.v:332: error: Unknown module type: full_handshake_rx
+21 error(s) during elaboration.
+*** These modules were missing:
+        full_handshake_rx referenced 2 times.
+        full_handshake_tx referenced 2 times.
+        gen_pipe_dff referenced 16 times.
+***
