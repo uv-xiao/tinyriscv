@@ -13,6 +13,7 @@ iverilog_cmd.append(r'../../tb/compliance_test/tinyriscv_soc_tb.v')
 # ../rtl/core
 iverilog_cmd.append(r'../../rtl/core/defines.v')
 iverilog_cmd.append(r'../../rtl/core/ex.v')
+iverilog_cmd.append(r'../../rtl/core/bpu.v')
 iverilog_cmd.append(r'../../rtl/core/id.v')
 iverilog_cmd.append(r'../../rtl/core/tinyriscv.v')
 iverilog_cmd.append(r'../../rtl/core/pc_reg.v')

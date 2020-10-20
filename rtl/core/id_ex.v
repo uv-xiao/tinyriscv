@@ -24,6 +24,7 @@ module id_ex(
 
     input wire[`InstBus] inst_i,            // 指令内容
     input wire[`InstAddrBus] inst_addr_i,   // 指令地址
+    input wire bp_result_i,
     input wire reg_we_i,                    // 写通用寄存器标志
     input wire[`RegAddrBus] reg_waddr_i,    // 写通用寄存器地址
     input wire[`RegBus] reg1_rdata_i,       // 通用寄存器1读数据
@@ -44,6 +45,7 @@ module id_ex(
     output wire[`MemAddrBus] op2_jump_o,
     output wire[`InstBus] inst_o,            // 指令内容
     output wire[`InstAddrBus] inst_addr_o,   // 指令地址
+    output wire bp_result_o,
     output wire reg_we_o,                    // 写通用寄存器标志
     output wire[`RegAddrBus] reg_waddr_o,    // 写通用寄存器地址
     output wire[`RegBus] reg1_rdata_o,       // 通用寄存器1读数据
@@ -63,6 +65,10 @@ module id_ex(
     wire[`InstAddrBus] inst_addr;
     gen_pipe_dff #(32) inst_addr_ff(clk, rst, hold_en, `ZeroWord, inst_addr_i, inst_addr);
     assign inst_addr_o = inst_addr;
+
+    wire bp_result;
+    gen_pipe_dff #(1) bp_result_ff(clk, rst, hold_en, `JumpDisable, bp_result_i, bp_result);
+    assign bp_result_o = bp_result;
 
     wire reg_we;
     gen_pipe_dff #(1) reg_we_ff(clk, rst, hold_en, `WriteDisable, reg_we_i, reg_we);

@@ -22,6 +22,8 @@ module pc_reg(
     input wire clk,
     input wire rst,
 
+    input wire bp_result_i,
+    input wire[`InstAddrBus] bp_jump_addr_i, 
     input wire jump_flag_i,                 // 跳转标志
     input wire[`InstAddrBus] jump_addr_i,   // 跳转地址
     input wire[`Hold_Flag_Bus] hold_flag_i, // 流水线暂停标志
@@ -32,6 +34,9 @@ module pc_reg(
     );
 
 
+    wire[`InstAddrBus] nxt_inst;
+    assign nxt_inst = (bp_result_i == 1'b1)? bp_jump_addr_i : pc_o + 4'h4; 
+    
     always @ (posedge clk) begin
         // 复位
         if (rst == `RstEnable || jtag_reset_flag_i == 1'b1) begin
@@ -44,7 +49,7 @@ module pc_reg(
             pc_o <= pc_o;
         // 地址加4
         end else begin
-            pc_o <= pc_o + 4'h4;
+            pc_o <= nxt_inst;  
         end
     end
 

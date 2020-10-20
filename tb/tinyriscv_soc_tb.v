@@ -1,4 +1,4 @@
-`timescale 1 ns / 1 ps
+`timescale 1 ns / 1 ns
 
 `include "defines.v"
 
@@ -14,7 +14,7 @@ module tinyriscv_soc_tb;
     reg rst;
 
 
-    always #10 clk = ~clk;     // 50MHz
+    always #20 clk = ~clk;     // 50MHz
 
     wire[`RegBus] x3 = tinyriscv_soc_top_0.u_tinyriscv.u_regs.regs[3];
     wire[`RegBus] x26 = tinyriscv_soc_top_0.u_tinyriscv.u_regs.regs[26];

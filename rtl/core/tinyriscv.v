@@ -48,6 +48,7 @@ module tinyriscv(
 	wire[`InstAddrBus] pc_pc_o;
 
     // if_id模块输出信号
+    wire if_bp_result_o;
 	wire[`InstBus] if_inst_o;
     wire[`InstAddrBus] if_inst_addr_o;
     wire[`INT_BUS] if_int_flag_o;
@@ -71,6 +72,7 @@ module tinyriscv(
     wire[`MemAddrBus] id_op2_jump_o;
 
     // id_ex模块输出信号
+    wire ie_bp_result_o;
     wire[`InstBus] ie_inst_o;
     wire[`InstAddrBus] ie_inst_addr_o;
     wire ie_reg_we_o;
@@ -105,6 +107,7 @@ module tinyriscv(
     wire[`RegBus] ex_csr_wdata_o;
     wire ex_csr_we_o;
     wire[`MemAddrBus] ex_csr_waddr_o;
+    wire[`InstAddrBus] ex_inst_addr_o; 
 
     // regs模块输出信号
     wire[`RegBus] regs_rdata1_o;
@@ -122,6 +125,7 @@ module tinyriscv(
     wire[`Hold_Flag_Bus] ctrl_hold_flag_o;
     wire ctrl_jump_flag_o;
     wire[`InstAddrBus] ctrl_jump_addr_o;
+    wire ctrl_jump_act_o;
 
     // div模块输出信号
     wire[`RegBus] div_result_o;
@@ -138,6 +142,10 @@ module tinyriscv(
     wire clint_int_assert_o;
     wire clint_hold_flag_o;
 
+    // output signals from BPU module
+    wire[`InstAddrBus] bpu_bp_jump_addr_o;
+    wire bpu_bp_result_o;
+
 
     assign rib_ex_addr_o = (ex_mem_we_o == `WriteEnable)? ex_mem_waddr_o: ex_mem_raddr_o;
     assign rib_ex_data_o = ex_mem_wdata_o;
@@ -151,6 +159,8 @@ module tinyriscv(
     pc_reg u_pc_reg(
         .clk(clk),
         .rst(rst),
+        .bp_result_i(bpu_bp_result_o),
+        .bp_jump_addr_i(bpu_bp_jump_addr_o),
         .jtag_reset_flag_i(jtag_reset_flag_i),
         .pc_o(pc_pc_o),
         .hold_flag_i(ctrl_hold_flag_o),
@@ -161,6 +171,8 @@ module tinyriscv(
     // ctrl模块例化
     ctrl u_ctrl(
         .rst(rst),
+        .inst_addr_i(ex_inst_addr_o),
+        .bp_result_i(ie_bp_result_o),
         .jump_flag_i(ex_jump_flag_o),
         .jump_addr_i(ex_jump_addr_o),
         .hold_flag_ex_i(ex_hold_flag_o),
@@ -169,6 +181,7 @@ module tinyriscv(
         .hold_flag_clint_i(clint_hold_flag_o),
         .jump_flag_o(ctrl_jump_flag_o),
         .jump_addr_o(ctrl_jump_addr_o),
+        .jump_act_o(ctrl_jump_act_o), 
         .jtag_halt_flag_i(jtag_halt_flag_i)
     );
 
@@ -209,17 +222,30 @@ module tinyriscv(
         .clint_csr_mstatus(csr_clint_csr_mstatus)
     );
 
+    // BPU
+    bpu u_bpu(
+        .clk(clk),
+        .rst(rst),
+        .inst_i(rib_pc_data_i),
+        .inst_addr_i(pc_pc_o),
+        .jump_act_i(ctrl_jump_act_o),
+        .bp_result_o(bpu_bp_result_o),
+        .bp_jump_addr_o(bpu_bp_jump_addr_o)
+    );
+
     // if_id模块例化
     if_id u_if_id(
         .clk(clk),
         .rst(rst),
         .inst_i(rib_pc_data_i),
         .inst_addr_i(pc_pc_o),
+        .bp_result_i(bpu_bp_result_o),
         .int_flag_i(int_i),
         .int_flag_o(if_int_flag_o),
         .hold_flag_i(ctrl_hold_flag_o),
         .inst_o(if_inst_o),
-        .inst_addr_o(if_inst_addr_o)
+        .inst_addr_o(if_inst_addr_o),
+        .bp_result_o(if_bp_result_o)
     );
 
     // id模块例化
@@ -255,6 +281,7 @@ module tinyriscv(
         .rst(rst),
         .inst_i(id_inst_o),
         .inst_addr_i(id_inst_addr_o),
+        .bp_result_i(if_bp_result_o),
         .reg_we_i(id_reg_we_o),
         .reg_waddr_i(id_reg_waddr_o),
         .reg1_rdata_i(id_reg1_rdata_o),
@@ -262,6 +289,7 @@ module tinyriscv(
         .hold_flag_i(ctrl_hold_flag_o),
         .inst_o(ie_inst_o),
         .inst_addr_o(ie_inst_addr_o),
+        .bp_result_o(ie_bp_result_o),
         .reg_we_o(ie_reg_we_o),
         .reg_waddr_o(ie_reg_waddr_o),
         .reg1_rdata_o(ie_reg1_rdata_o),
@@ -287,6 +315,7 @@ module tinyriscv(
         .rst(rst),
         .inst_i(ie_inst_o),
         .inst_addr_i(ie_inst_addr_o),
+        .inst_addr_o(ex_inst_addr_o),
         .reg_we_i(ie_reg_we_o),
         .reg_waddr_i(ie_reg_waddr_o),
         .reg1_rdata_i(ie_reg1_rdata_o),

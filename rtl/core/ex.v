@@ -75,8 +75,9 @@ module ex(
     // to ctrl
     output wire hold_flag_o,                // 是否暂停标志
     output wire jump_flag_o,                // 是否跳转标志
-    output wire[`InstAddrBus] jump_addr_o   // 跳转目的地址
-
+    output wire[`InstAddrBus] jump_addr_o,  // 跳转目的地址
+    output wire[`InstAddrBus] inst_addr_o
+ 
     );
 
     wire[1:0] mem_raddr_index;
@@ -117,6 +118,7 @@ module ex(
     reg mem_req;
     reg div_start;
 
+    assign inst_addr_o = inst_addr_i;
     assign opcode = inst_i[6:0];
     assign funct3 = inst_i[14:12];
     assign funct7 = inst_i[31:25];
