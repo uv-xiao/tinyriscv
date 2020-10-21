@@ -28,6 +28,7 @@ module ctrl(
     input wire jump_flag_i,
     input wire[`InstAddrBus] jump_addr_i,
     input wire hold_flag_ex_i,
+    input wire need_predict_i,
 
     // from rib
     input wire hold_flag_rib_i,
@@ -44,7 +45,9 @@ module ctrl(
     output reg jump_flag_o,
     output reg[`InstAddrBus] jump_addr_o,
 
-    output reg jump_act_o
+    output reg need_predict_o,
+    output reg jump_act_o,
+    output reg[`InstAddrBus] inst_addr_o 
     
 
     );
@@ -56,6 +59,8 @@ module ctrl(
     assign addr = (bp_result_i) ? (inst_addr_i + 32'b0100) : (jump_addr_i);
 
     always @ (*) begin
+        need_predict_o = need_predict_i;
+        inst_addr_o = inst_addr_i;
         jump_act_o = jump_flag_i;
         jump_flag_o = jump;
         jump_addr_o = {32{jump}} & addr; 

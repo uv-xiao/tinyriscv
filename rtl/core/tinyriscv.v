@@ -108,6 +108,7 @@ module tinyriscv(
     wire ex_csr_we_o;
     wire[`MemAddrBus] ex_csr_waddr_o;
     wire[`InstAddrBus] ex_inst_addr_o; 
+    wire ex_need_predict_o;
 
     // regs模块输出信号
     wire[`RegBus] regs_rdata1_o;
@@ -125,7 +126,9 @@ module tinyriscv(
     wire[`Hold_Flag_Bus] ctrl_hold_flag_o;
     wire ctrl_jump_flag_o;
     wire[`InstAddrBus] ctrl_jump_addr_o;
+    wire[`InstAddrBus] ctrl_inst_addr_o;
     wire ctrl_jump_act_o;
+    wire ctrl_need_predict_o;
 
     // div模块输出信号
     wire[`RegBus] div_result_o;
@@ -171,6 +174,8 @@ module tinyriscv(
     // ctrl模块例化
     ctrl u_ctrl(
         .rst(rst),
+        .need_predict_i(ex_need_predict_o),
+        .need_predict_o(ctrl_need_predict_o),
         .inst_addr_i(ex_inst_addr_o),
         .bp_result_i(ie_bp_result_o),
         .jump_flag_i(ex_jump_flag_o),
@@ -182,7 +187,8 @@ module tinyriscv(
         .jump_flag_o(ctrl_jump_flag_o),
         .jump_addr_o(ctrl_jump_addr_o),
         .jump_act_o(ctrl_jump_act_o), 
-        .jtag_halt_flag_i(jtag_halt_flag_i)
+        .jtag_halt_flag_i(jtag_halt_flag_i),
+        .inst_addr_o(ctrl_inst_addr_o)
     );
 
     // regs模块例化
@@ -226,9 +232,10 @@ module tinyriscv(
     bpu u_bpu(
         .clk(clk),
         .rst(rst),
+        .last_addr_i(ctrl_inst_addr_o),
         .inst_i(rib_pc_data_i),
         .inst_addr_i(pc_pc_o),
-        .jump_act_i(ctrl_jump_act_o),
+        .last_jump_i(ctrl_jump_act_o),
         .bp_result_o(bpu_bp_result_o),
         .bp_jump_addr_o(bpu_bp_jump_addr_o)
     );
@@ -352,7 +359,8 @@ module tinyriscv(
         .csr_rdata_i(ie_csr_rdata_o),
         .csr_wdata_o(ex_csr_wdata_o),
         .csr_we_o(ex_csr_we_o),
-        .csr_waddr_o(ex_csr_waddr_o)
+        .csr_waddr_o(ex_csr_waddr_o),
+        .need_predict_o(ex_need_predict_o)
     );
 
     // div模块例化
