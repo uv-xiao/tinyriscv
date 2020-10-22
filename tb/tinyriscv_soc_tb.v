@@ -12,9 +12,11 @@ module tinyriscv_soc_tb;
 
     reg clk;
     reg rst;
+    integer tm;
 
 
-    always #20 clk = ~clk;     // 50MHz
+    always #10 clk = ~clk;     // 50MHz
+    always #10 tm = tm + 1;
 
     wire[`RegBus] x3 = tinyriscv_soc_top_0.u_tinyriscv.u_regs.regs[3];
     wire[`RegBus] x26 = tinyriscv_soc_top_0.u_tinyriscv.u_regs.regs[26];
@@ -40,6 +42,7 @@ module tinyriscv_soc_tb;
     initial begin
         clk = 0;
         rst = `RstEnable;
+        tm = 0;
 `ifdef TEST_JTAG
         TCK = 1;
         TMS = 1;
@@ -63,6 +66,7 @@ module tinyriscv_soc_tb;
             $display("~~~~~~~~~ #       #    #  #    #  #    #~~~~~~~~~");
             $display("~~~~~~~~~ #       #    #   ####    #### ~~~~~~~~~");
             $display("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+            $display("cycles = %d", tm);
         end else begin
             $display("~~~~~~~~~~~~~~~~~~~ TEST_FAIL ~~~~~~~~~~~~~~~~~~~~");
             $display("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
@@ -488,7 +492,7 @@ module tinyriscv_soc_tb;
 
     // sim timeout
     initial begin
-        #500000
+        #5000000
         $display("Time Out.");
         $finish;
     end

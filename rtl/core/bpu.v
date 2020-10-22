@@ -71,7 +71,7 @@ module bpu(
 // end: 2-bit branch predictor 
 
 // begin: one-level branch predictor(Decode History Table)
-  reg[3:0] dht[31:0];
+  reg[1:0] dht[31:0];
   integer last_5, upper, lower ;
   always @(posedge clk) begin
     if (rst == `RstEnable) begin
@@ -192,19 +192,23 @@ module bpu(
      
     case (opcode)
       `INST_JAL: begin
-        bp_jump_addr_o = jal_addr;                              // static predictor
+        bp_jump_addr_o = jal_addr;                              
+        bp_result_o = 1'b0;                                     // no branch predictor
+
 //      bp_result_o = 1'b1;                                     // static predictor
-        bp_result_o = (state == 2'b10) || (state == 2'b11);     // 2-bit branch prediction 
+//      bp_result_o = (state == 2'b10) || (state == 2'b11);     // 2-bit branch prediction 
+
 /*
         for (last_5=0; last_5 < 32; last_5 = last_5 + 1) begin  // one-level branch prediction
-            if (last_5 == last_addr_i[4:0]) begin
+            if (last_5 == inst_addr_i[4:0]) begin
                 bp_result_o = (dht[last_5] == 2'b10) || (dht[last_5] == 2'b11);
             end
         end
 */
+
 /*
-        for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin
-            if (i_5 == last_addr_i[4:0]) begin
+        for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin            // two-level adaptive
+            if (i_5 == inst_addr_i[4:0]) begin
                 tmp_reg = c_reg[i_5];
                 for (j_5 = 0; j_5 < 32; j_5 = j_5 + 1) begin
                     if (j_5 == tmp_reg) begin
@@ -216,19 +220,23 @@ module bpu(
 */
       end
       `INST_TYPE_B:begin
-        bp_jump_addr_o = b_addr;                                // static predictor
+        bp_jump_addr_o = b_addr;                                
+        bp_result_o = 1'b0;                                     // no branch predictor
+
 //      bp_result_o = $signed(b_addr) < $signed(inst_addr_i);   // static predictor
-        bp_result_o = (state == 2'b10) || (state == 2'b11);     // 2-bit branch prediction 
+//      bp_result_o = (state == 2'b10) || (state == 2'b11);     // 2-bit branch prediction 
+
 /*
         for (last_5=0; last_5 < 32; last_5 = last_5 + 1) begin  // one-level branch prediction
-            if (last_5 == last_addr_i[4:0]) begin
+            if (last_5 == inst_addr_i[4:0]) begin
                 bp_result_o = (dht[last_5] == 2'b10) || (dht[last_5] == 2'b11);
             end
         end
 */
+
 /*
-        for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin
-            if (i_5 == last_addr_i[4:0]) begin
+        for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin            // two-level adaptive
+            if (i_5 == inst_addr_i[4:0]) begin
                 tmp_reg = c_reg[i_5];
                 for (j_5 = 0; j_5 < 32; j_5 = j_5 + 1) begin
                     if (j_5 == tmp_reg) begin
