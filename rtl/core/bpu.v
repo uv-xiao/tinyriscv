@@ -24,7 +24,7 @@ module bpu(
 
 //begin:  2-bit branch predictor
 
-  reg[2:0] state;
+  reg[1:0] state;
   // 00 -- strongly not taken
   // 01 -- weakly not taken
   // 10 -- weakly not taken
