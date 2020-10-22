@@ -32,7 +32,7 @@ module bpu(
 
   always @(posedge clk) begin
     if (rst == `RstEnable) begin
-        state <= 2'b00;
+        state <= 2'b10;
     end else 
     if (last_need_predict_i == 1'b1) begin
         case (state)
@@ -76,11 +76,11 @@ module bpu(
   always @(posedge clk) begin
     if (rst == `RstEnable) begin
         for (last_5 = 0; last_5 <= 31; last_5 = last_5 + 1)
-            dht[last_5] = 2'b00;
+            dht[last_5] = 2'b10;
     end else begin 
     if (last_need_predict_i == 1'b1) begin
         for (last_5 = 0; last_5 <32; last_5 += 1) begin
-            if (last_5 == last_addr_i[4:0]) begin
+            if (last_5 == last_addr_i[6:2]) begin
                 case (dht[last_5])
                     2'b00: begin
                         if (last_jump_i == 1'b1) begin
@@ -130,45 +130,44 @@ module bpu(
     always @(posedge clk) begin
         if (rst == `RstEnable) begin
             for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin
-                c_reg[i_5] <= 5'b0;
-                gpt[i_5] <= 2'b0;
+                c_reg[i_5] <= 5'b10101;
+                gpt[i_5] <= 2'b10;
             end
         end else begin
             if (last_need_predict_i == 1'b1) begin
                 for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin
-                    if (i_5 == last_addr_i[4:0]) begin
-                        tmp_reg = {c_reg[i_5][3:0], last_jump_i};
-                        c_reg[i_5] = tmp_reg;
+                    if (i_5 == last_addr_i[6:2]) begin
+                        c_reg[i_5] = {c_reg[i_5][3:0], last_jump_i};
                         
                         for (j_5 = 0; j_5 < 32; j_5 += 1) begin
-                            if (j_5 == tmp_reg) begin
+                            if (j_5 == c_reg[i_5]) begin
                                 case (gpt[j_5])
                                     2'b00: begin
                                         if (last_jump_i == 1'b1) begin
-                                            gpt[j_5] <= 2'b01;
+                                            gpt[j_5] = 2'b01;
                                         end else begin
-                                            gpt[j_5] <= 2'b00;
+                                            gpt[j_5] = 2'b00;
                                         end
                                     end
                                     2'b01: begin
                                         if (last_jump_i == 1'b1) begin
-                                            gpt[j_5] <= 2'b10;
+                                            gpt[j_5] = 2'b10;
                                         end else begin
-                                            gpt[j_5] <= 2'b00;
+                                            gpt[j_5] = 2'b00;
                                         end
                                     end
                                     2'b10: begin
                                         if (last_jump_i == 1'b1) begin
-                                            gpt[j_5] <= 2'b11;
+                                            gpt[j_5] = 2'b11;
                                         end else begin
-                                            gpt[j_5] <= 2'b01;
+                                            gpt[j_5] = 2'b01;
                                         end
                                     end
                                     2'b11: begin
                                         if (last_jump_i == 1'b1) begin
-                                            gpt[j_5] <= 2'b11;
+                                            gpt[j_5] = 2'b11;
                                         end else begin
-                                            gpt[j_5] <= 2'b10;
+                                            gpt[j_5] = 2'b10;
                                         end
                                     end
                                     default: begin end 
@@ -193,59 +192,53 @@ module bpu(
     case (opcode)
       `INST_JAL: begin
         bp_jump_addr_o = jal_addr;                              
-        bp_result_o = 1'b0;                                     // no branch predictor
+//      bp_result_o = 1'b0;                                     // no branch predictor
 
 //      bp_result_o = 1'b1;                                     // static predictor
 //      bp_result_o = (state == 2'b10) || (state == 2'b11);     // 2-bit branch prediction 
 
 /*
         for (last_5=0; last_5 < 32; last_5 = last_5 + 1) begin  // one-level branch prediction
-            if (last_5 == inst_addr_i[4:0]) begin
+            if (last_5 == inst_addr_i[6:2]) begin
                 bp_result_o = (dht[last_5] == 2'b10) || (dht[last_5] == 2'b11);
             end
         end
 */
 
-/*
         for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin            // two-level adaptive
-            if (i_5 == inst_addr_i[4:0]) begin
-                tmp_reg = c_reg[i_5];
+            if (i_5 == inst_addr_i[6:2]) begin
                 for (j_5 = 0; j_5 < 32; j_5 = j_5 + 1) begin
-                    if (j_5 == tmp_reg) begin
+                    if (j_5 == c_reg[i_5]) begin
                         bp_result_o = (gpt[j_5] == 2'b10) || (gpt[j_5] == 2'b11);
                     end
                 end
             end
         end
-*/
       end
       `INST_TYPE_B:begin
         bp_jump_addr_o = b_addr;                                
-        bp_result_o = 1'b0;                                     // no branch predictor
+//      bp_result_o = 1'b0;                                     // no branch predictor
 
 //      bp_result_o = $signed(b_addr) < $signed(inst_addr_i);   // static predictor
 //      bp_result_o = (state == 2'b10) || (state == 2'b11);     // 2-bit branch prediction 
 
 /*
         for (last_5=0; last_5 < 32; last_5 = last_5 + 1) begin  // one-level branch prediction
-            if (last_5 == inst_addr_i[4:0]) begin
+            if (last_5 == inst_addr_i[6:2]) begin
                 bp_result_o = (dht[last_5] == 2'b10) || (dht[last_5] == 2'b11);
             end
         end
 */
 
-/*
         for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin            // two-level adaptive
-            if (i_5 == inst_addr_i[4:0]) begin
-                tmp_reg = c_reg[i_5];
+            if (i_5 == inst_addr_i[6:2]) begin
                 for (j_5 = 0; j_5 < 32; j_5 = j_5 + 1) begin
-                    if (j_5 == tmp_reg) begin
+                    if (j_5 == c_reg[i_5]) begin
                         bp_result_o = (gpt[j_5] == 2'b10) || (gpt[j_5] == 2'b11);
                     end
                 end
             end
         end
-*/
       end 
       default: begin
       end
