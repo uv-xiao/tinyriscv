@@ -236,6 +236,7 @@ module tinyriscv(
         .inst_i(rib_pc_data_i),
         .inst_addr_i(pc_pc_o),
         .last_jump_i(ctrl_jump_act_o),
+        .last_need_predict_i(ctrl_need_predict_o),
         .bp_result_o(bpu_bp_result_o),
         .bp_jump_addr_o(bpu_bp_jump_addr_o)
     );
