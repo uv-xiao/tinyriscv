@@ -137,10 +137,11 @@ module bpu(
             if (last_need_predict_i == 1'b1) begin
                 for (i_5 = 0; i_5 < 32; i_5 = i_5 + 1) begin
                     if (i_5 == last_addr_i[6:2]) begin
+                    	 tmp_reg = c_reg[i_5];
                         c_reg[i_5] = {c_reg[i_5][3:0], last_jump_i};
                         
                         for (j_5 = 0; j_5 < 32; j_5 += 1) begin
-                            if (j_5 == c_reg[i_5]) begin
+                            if (j_5 == tmp_reg) begin
                                 case (gpt[j_5])
                                     2'b00: begin
                                         if (last_jump_i == 1'b1) begin
