@@ -22,13 +22,15 @@ module id_ex(
     input wire clk,
     input wire rst,
 
+    input wire freg_we_i,                   // 写通用float寄存器标志
+
     input wire[`InstBus] inst_i,            // 指令内容
     input wire[`InstAddrBus] inst_addr_i,   // 指令地址
     input wire bp_result_i,
     input wire reg_we_i,                    // 写通用寄存器标志
-    input wire[`RegAddrBus] reg_waddr_i,    // 写通用寄存器地址
-    input wire[`RegBus] reg1_rdata_i,       // 通用寄存器1读数据
-    input wire[`RegBus] reg2_rdata_i,       // 通用寄存器2读数据
+    input wire[`RegAddrBus] reg_waddr_i,    // 写通用(float)寄存器地址
+    input wire[`RegBus] reg1_rdata_i,       // 通用(float)寄存器1读数据
+    input wire[`RegBus] reg2_rdata_i,       // 通用(float)寄存器2读数据
     input wire csr_we_i,                    // 写CSR寄存器标志
     input wire[`MemAddrBus] csr_waddr_i,    // 写CSR寄存器地址
     input wire[`RegBus] csr_rdata_i,        // CSR寄存器读数据
@@ -39,6 +41,8 @@ module id_ex(
 
     input wire[`Hold_Flag_Bus] hold_flag_i, // 流水线暂停标志
 
+    output wire freg_we_o,                    // 写通用float寄存器标志
+
     output wire[`MemAddrBus] op1_o,
     output wire[`MemAddrBus] op2_o,
     output wire[`MemAddrBus] op1_jump_o,
@@ -47,9 +51,9 @@ module id_ex(
     output wire[`InstAddrBus] inst_addr_o,   // 指令地址
     output wire bp_result_o,
     output wire reg_we_o,                    // 写通用寄存器标志
-    output wire[`RegAddrBus] reg_waddr_o,    // 写通用寄存器地址
-    output wire[`RegBus] reg1_rdata_o,       // 通用寄存器1读数据
-    output wire[`RegBus] reg2_rdata_o,       // 通用寄存器2读数据
+    output wire[`RegAddrBus] reg_waddr_o,    // 写通用(float)寄存器地址
+    output wire[`RegBus] reg1_rdata_o,       // 通用(float)寄存器1读数据
+    output wire[`RegBus] reg2_rdata_o,       // 通用(float)寄存器2读数据
     output wire csr_we_o,                    // 写CSR寄存器标志
     output wire[`MemAddrBus] csr_waddr_o,    // 写CSR寄存器地址
     output wire[`RegBus] csr_rdata_o         // CSR寄存器读数据
@@ -73,6 +77,10 @@ module id_ex(
     wire reg_we;
     gen_pipe_dff #(1) reg_we_ff(clk, rst, hold_en, `WriteDisable, reg_we_i, reg_we);
     assign reg_we_o = reg_we;
+
+    wire freg_we;
+    gen_pipe_dff #(1) reg_we_ff(clk, rst, hold_en, `WriteDisable, freg_we_i, freg_we);
+    assign freg_we_o = freg_we;
 
     wire[`RegAddrBus] reg_waddr;
     gen_pipe_dff #(5) reg_waddr_ff(clk, rst, hold_en, `ZeroReg, reg_waddr_i, reg_waddr);

@@ -30,6 +30,10 @@ module id(
     input wire[`RegBus] reg1_rdata_i,        // 通用寄存器1输入数据
     input wire[`RegBus] reg2_rdata_i,        // 通用寄存器2输入数据
 
+    // from fregs
+    input wire[`RegBus] freg1_rdata_i,        // 通用Float寄存器1输入数据
+    input wire[`RegBus] freg2_rdata_i,        // 通用Float寄存器2输入数据
+
     // from csr reg
     input wire[`RegBus] csr_rdata_i,         // CSR寄存器输入数据
 
@@ -39,6 +43,10 @@ module id(
     // to regs
     output reg[`RegAddrBus] reg1_raddr_o,    // 读通用寄存器1地址
     output reg[`RegAddrBus] reg2_raddr_o,    // 读通用寄存器2地址
+
+    // to fregs
+    output reg[`RegAddrBus] freg1_raddr_o,    // 读通用float寄存器1地址
+    output reg[`RegAddrBus] freg2_raddr_o,    // 读通用float寄存器2地址
 
     // to csr reg
     output reg[`MemAddrBus] csr_raddr_o,     // 读CSR寄存器地址
@@ -50,10 +58,11 @@ module id(
     output reg[`MemAddrBus] op2_jump_o,
     output reg[`InstBus] inst_o,             // 指令内容
     output reg[`InstAddrBus] inst_addr_o,    // 指令地址
-    output reg[`RegBus] reg1_rdata_o,        // 通用寄存器1数据
-    output reg[`RegBus] reg2_rdata_o,        // 通用寄存器2数据
+    output reg[`RegBus] reg1_rdata_o,        // 通用(float)寄存器1数据
+    output reg[`RegBus] reg2_rdata_o,        // 通用(float)寄存器2数据
     output reg reg_we_o,                     // 写通用寄存器标志
-    output reg[`RegAddrBus] reg_waddr_o,     // 写通用寄存器地址
+    output reg freg_we_o,                    // 写通用float寄存器标志
+    output reg[`RegAddrBus] reg_waddr_o,     // 写通用(float)寄存器地址
     output reg csr_we_o,                     // 写CSR寄存器标志
     output reg[`RegBus] csr_rdata_o,         // CSR寄存器数据
     output reg[`MemAddrBus] csr_waddr_o      // 写CSR寄存器地址
@@ -67,12 +76,14 @@ module id(
     wire[4:0] rs1 = inst_i[19:15];
     wire[4:0] rs2 = inst_i[24:20];
 
+    wire inst_float = (opcode == `INST_FLW ) || (opcode == `INST_FSW) || (opcode == `INST_FADDS);
+
 
     always @ (*) begin
         inst_o = inst_i;
         inst_addr_o = inst_addr_i;
-        reg1_rdata_o = reg1_rdata_i;
-        reg2_rdata_o = reg2_rdata_i;
+        reg1_rdata_o = inst_float ? freg1_rdata_i : reg1_rdata_i;
+        reg2_rdata_o = inst_float ? freg2_rdata_i : reg2_rdata_i;
         csr_rdata_o = csr_rdata_i;
         csr_raddr_o = `ZeroWord;
         csr_waddr_o = `ZeroWord;
@@ -83,9 +94,45 @@ module id(
         op2_jump_o = `ZeroWord;
 
         case (opcode)
+            `INST_FLW: begin
+                freg_we_o = `WriteEnable;
+                reg_we_o = `WriteDisable;
+                freg1_raddr_o = rs1;
+                freg2_raddr_o = `ZeroReg;
+                reg1_raddr_o = `ZeroReg;
+                reg2_raddr_o = `ZeroReg;
+                reg_waddr_o = rd;
+                op1_o = reg1_rdata_i;
+                op2_o = {{20{inst_i[31]}}, inst_i[31:20]};
+            end
+            `INST_FSW: begin
+                freg1_raddr_o = rs1;
+                freg2_raddr_o = rs2;
+                reg1_raddr_o = `ZeroReg;
+                reg2_raddr_o = `ZeroReg;
+                reg_we_o = `WriteDisable;
+                freg_we_o = `WriteDisable;
+                reg_waddr_o = `ZeroReg;
+                op1_o = freg1_rdata_i;
+                op2_o = {{20{inst_i[31]}}, inst_i[31:25], inst_i[11:7]};
+            end
+            `INST_FADDS: begin
+                freg_we_o = `WriteEnable;
+                reg_we_o = `WriteDisable;
+                reg_waddr_o = rd;
+                freg1_raddr_o = rs1;
+                freg2_raddr_o = rs2;
+                reg1_raddr_o = `ZeroReg;
+                reg2_raddr_o = `ZeroReg;
+                op1_o = freg1_rdata_i;
+                op2_o = freg2_rdata_i;
+            end
             `INST_TYPE_I: begin
                 case (funct3)
                     `INST_ADDI, `INST_SLTI, `INST_SLTIU, `INST_XORI, `INST_ORI, `INST_ANDI, `INST_SLLI, `INST_SRI: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg_we_o = `WriteEnable;
                         reg_waddr_o = rd;
                         reg1_raddr_o = rs1;
@@ -94,6 +141,9 @@ module id(
                         op2_o = {{20{inst_i[31]}}, inst_i[31:20]};
                     end
                     default: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg_we_o = `WriteDisable;
                         reg_waddr_o = `ZeroReg;
                         reg1_raddr_o = `ZeroReg;
@@ -105,6 +155,9 @@ module id(
                 if ((funct7 == 7'b0000000) || (funct7 == 7'b0100000)) begin
                     case (funct3)
                         `INST_ADD_SUB, `INST_SLL, `INST_SLT, `INST_SLTU, `INST_XOR, `INST_SR, `INST_OR, `INST_AND: begin
+                            freg_we_o = `WriteDisable;
+                            freg1_raddr_o = `ZeroReg;
+                            freg2_raddr_o = `ZeroReg;
                             reg_we_o = `WriteEnable;
                             reg_waddr_o = rd;
                             reg1_raddr_o = rs1;
@@ -113,6 +166,9 @@ module id(
                             op2_o = reg2_rdata_i;
                         end
                         default: begin
+                            freg_we_o = `WriteDisable;
+                            freg1_raddr_o = `ZeroReg;
+                            freg2_raddr_o = `ZeroReg;
                             reg_we_o = `WriteDisable;
                             reg_waddr_o = `ZeroReg;
                             reg1_raddr_o = `ZeroReg;
@@ -122,6 +178,9 @@ module id(
                 end else if (funct7 == 7'b0000001) begin
                     case (funct3)
                         `INST_MUL, `INST_MULHU, `INST_MULH, `INST_MULHSU: begin
+                            freg_we_o = `WriteDisable;
+                            freg1_raddr_o = `ZeroReg;
+                            freg2_raddr_o = `ZeroReg;
                             reg_we_o = `WriteEnable;
                             reg_waddr_o = rd;
                             reg1_raddr_o = rs1;
@@ -130,6 +189,9 @@ module id(
                             op2_o = reg2_rdata_i;
                         end
                         `INST_DIV, `INST_DIVU, `INST_REM, `INST_REMU: begin
+                            freg_we_o = `WriteDisable;
+                            freg1_raddr_o = `ZeroReg;
+                            freg2_raddr_o = `ZeroReg;
                             reg_we_o = `WriteDisable;
                             reg_waddr_o = rd;
                             reg1_raddr_o = rs1;
@@ -140,6 +202,9 @@ module id(
                             op2_jump_o = 32'h4;
                         end
                         default: begin
+                            freg_we_o = `WriteDisable;
+                            freg1_raddr_o = `ZeroReg;
+                            freg2_raddr_o = `ZeroReg;
                             reg_we_o = `WriteDisable;
                             reg_waddr_o = `ZeroReg;
                             reg1_raddr_o = `ZeroReg;
@@ -147,6 +212,9 @@ module id(
                         end
                     endcase
                 end else begin
+                    freg_we_o = `WriteDisable;
+                    freg1_raddr_o = `ZeroReg;
+                    freg2_raddr_o = `ZeroReg;
                     reg_we_o = `WriteDisable;
                     reg_waddr_o = `ZeroReg;
                     reg1_raddr_o = `ZeroReg;
@@ -156,6 +224,9 @@ module id(
             `INST_TYPE_L: begin
                 case (funct3)
                     `INST_LB, `INST_LH, `INST_LW, `INST_LBU, `INST_LHU: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg1_raddr_o = rs1;
                         reg2_raddr_o = `ZeroReg;
                         reg_we_o = `WriteEnable;
@@ -164,6 +235,9 @@ module id(
                         op2_o = {{20{inst_i[31]}}, inst_i[31:20]};
                     end
                     default: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg1_raddr_o = `ZeroReg;
                         reg2_raddr_o = `ZeroReg;
                         reg_we_o = `WriteDisable;
@@ -174,6 +248,9 @@ module id(
             `INST_TYPE_S: begin
                 case (funct3)
                     `INST_SB, `INST_SW, `INST_SH: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg1_raddr_o = rs1;
                         reg2_raddr_o = rs2;
                         reg_we_o = `WriteDisable;
@@ -182,6 +259,9 @@ module id(
                         op2_o = {{20{inst_i[31]}}, inst_i[31:25], inst_i[11:7]};
                     end
                     default: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg1_raddr_o = `ZeroReg;
                         reg2_raddr_o = `ZeroReg;
                         reg_we_o = `WriteDisable;
@@ -192,6 +272,9 @@ module id(
             `INST_TYPE_B: begin
                 case (funct3)
                     `INST_BEQ, `INST_BNE, `INST_BLT, `INST_BGE, `INST_BLTU, `INST_BGEU: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg1_raddr_o = rs1;
                         reg2_raddr_o = rs2;
                         reg_we_o = `WriteDisable;
@@ -202,6 +285,9 @@ module id(
                         op2_jump_o = {{20{inst_i[31]}}, inst_i[7], inst_i[30:25], inst_i[11:8], 1'b0};
                     end
                     default: begin
+                        freg_we_o = `WriteDisable;
+                        freg1_raddr_o = `ZeroReg;
+                        freg2_raddr_o = `ZeroReg;
                         reg1_raddr_o = `ZeroReg;
                         reg2_raddr_o = `ZeroReg;
                         reg_we_o = `WriteDisable;
@@ -210,6 +296,9 @@ module id(
                 endcase
             end
             `INST_JAL: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteEnable;
                 reg_waddr_o = rd;
                 reg1_raddr_o = `ZeroReg;
@@ -220,6 +309,9 @@ module id(
                 op2_jump_o = {{12{inst_i[31]}}, inst_i[19:12], inst_i[20], inst_i[30:21], 1'b0};
             end
             `INST_JALR: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteEnable;
                 reg1_raddr_o = rs1;
                 reg2_raddr_o = `ZeroReg;
@@ -230,6 +322,9 @@ module id(
                 op2_jump_o = {{20{inst_i[31]}}, inst_i[31:20]};
             end
             `INST_LUI: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteEnable;
                 reg_waddr_o = rd;
                 reg1_raddr_o = `ZeroReg;
@@ -238,6 +333,9 @@ module id(
                 op2_o = `ZeroWord;
             end
             `INST_AUIPC: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteEnable;
                 reg_waddr_o = rd;
                 reg1_raddr_o = `ZeroReg;
@@ -246,12 +344,18 @@ module id(
                 op2_o = {inst_i[31:12], 12'b0};
             end
             `INST_NOP_OP: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteDisable;
                 reg_waddr_o = `ZeroReg;
                 reg1_raddr_o = `ZeroReg;
                 reg2_raddr_o = `ZeroReg;
             end
             `INST_FENCE: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteDisable;
                 reg_waddr_o = `ZeroReg;
                 reg1_raddr_o = `ZeroReg;
@@ -260,6 +364,9 @@ module id(
                 op2_jump_o = 32'h4;
             end
             `INST_CSR: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteDisable;
                 reg_waddr_o = `ZeroReg;
                 reg1_raddr_o = `ZeroReg;
@@ -291,6 +398,9 @@ module id(
                 endcase
             end
             default: begin
+                freg_we_o = `WriteDisable;
+                freg1_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteDisable;
                 reg_waddr_o = `ZeroReg;
                 reg1_raddr_o = `ZeroReg;

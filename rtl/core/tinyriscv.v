@@ -70,12 +70,16 @@ module tinyriscv(
     wire[`MemAddrBus] id_op2_o;
     wire[`MemAddrBus] id_op1_jump_o;
     wire[`MemAddrBus] id_op2_jump_o;
+    wire[`RegAddrBus] id_freg1_raddr_o;
+    wire[`RegAddrBus] id_freg2_raddr_o;
+
 
     // id_ex模块输出信号
     wire ie_bp_result_o;
     wire[`InstBus] ie_inst_o;
     wire[`InstAddrBus] ie_inst_addr_o;
     wire ie_reg_we_o;
+    wire ie_freg_we_o;
     wire[`RegAddrBus] ie_reg_waddr_o;
     wire[`RegBus] ie_reg1_rdata_o;
     wire[`RegBus] ie_reg2_rdata_o;
@@ -95,6 +99,7 @@ module tinyriscv(
     wire ex_mem_req_o;
     wire[`RegBus] ex_reg_wdata_o;
     wire ex_reg_we_o;
+    wire ex_freg_we_o;
     wire[`RegAddrBus] ex_reg_waddr_o;
     wire ex_hold_flag_o;
     wire ex_jump_flag_o;
@@ -113,6 +118,10 @@ module tinyriscv(
     // regs模块输出信号
     wire[`RegBus] regs_rdata1_o;
     wire[`RegBus] regs_rdata2_o;
+
+    // fregs模块输出信号
+    wire[`RegBus] fregs_rdata1_o;
+    wire[`RegBus] fregs_rdata2_o;
 
     // csr_reg模块输出信号
     wire[`RegBus] csr_data_o;
@@ -207,6 +216,26 @@ module tinyriscv(
         .jtag_data_i(jtag_reg_data_i),
         .jtag_data_o(jtag_reg_data_o)
     );
+
+    // fregs模块例化
+    fregs u_fregs(
+        .clk(clk),
+        .rst(rst),
+        .we_i(ex_freg_we_o),
+        .waddr_i(ex_reg_waddr_o),
+        .wdata_i(ex_reg_wdata_o),
+        .raddr1_i(id_freg1_raddr_o),
+        .rdata1_o(fregs_rdata1_o),
+        .raddr2_i(id_freg2_raddr_o),
+        .rdata2_o(fregs_rdata2_o)
+/*
+        .jtag_we_i(jtag_reg_we_i),
+        .jtag_addr_i(jtag_reg_addr_i),
+        .jtag_data_i(jtag_reg_data_i),
+        .jtag_data_o(jtag_reg_data_o)
+*/
+    );
+
 
     // csr_reg模块例化
     csr_reg u_csr_reg(

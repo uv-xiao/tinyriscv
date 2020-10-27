@@ -15,6 +15,7 @@
  */
 
 `include "defines.v"
+`include "fpu.v"
 
 // 执行模块
 // 纯组合逻辑电路
@@ -26,9 +27,10 @@ module ex(
     input wire[`InstBus] inst_i,            // 指令内容
     input wire[`InstAddrBus] inst_addr_i,   // 指令地址
     input wire reg_we_i,                    // 是否写通用寄存器
-    input wire[`RegAddrBus] reg_waddr_i,    // 写通用寄存器地址
-    input wire[`RegBus] reg1_rdata_i,       // 通用寄存器1输入数据
-    input wire[`RegBus] reg2_rdata_i,       // 通用寄存器2输入数据
+    input wire freg_we_i,                   // 是否写通用float寄存器
+    input wire[`RegAddrBus] reg_waddr_i,    // 写通用(float)寄存器地址
+    input wire[`RegBus] reg1_rdata_i,       // 通用(float)寄存器1输入数据
+    input wire[`RegBus] reg2_rdata_i,       // 通用(float)寄存器2输入数据
     input wire csr_we_i,                    // 是否写CSR寄存器
     input wire[`MemAddrBus] csr_waddr_i,    // 写CSR寄存器地址
     input wire[`RegBus] csr_rdata_i,        // CSR寄存器输入数据
@@ -55,10 +57,11 @@ module ex(
     output wire mem_we_o,                   // 是否要写内存
     output wire mem_req_o,                  // 请求访问内存标志
 
-    // to regs
+    // to (f)regs
     output wire[`RegBus] reg_wdata_o,       // 写寄存器数据
     output wire reg_we_o,                   // 是否要写通用寄存器
-    output wire[`RegAddrBus] reg_waddr_o,   // 写通用寄存器地址
+    output wire freg_we_o,
+    output wire[`RegAddrBus] reg_waddr_o,   // 写通用(float)寄存器地址
 
     // to csr reg
     output reg[`RegBus] csr_wdata_o,        // 写CSR寄存器数据
@@ -80,6 +83,8 @@ module ex(
     output wire need_predict_o
  
     );
+
+    wire[31:0] op1_fadd_op2_res; // op1 fadd op2
 
     wire[1:0] mem_raddr_index;
     wire[1:0] mem_waddr_index;
@@ -105,6 +110,7 @@ module ex(
     wire[4:0] uimm;
     reg[`RegBus] reg_wdata;
     reg reg_we;
+    reg freg_we;  // float register enable signal
     reg[`RegAddrBus] reg_waddr;
     reg[`RegBus] div_wdata;
     reg div_we;
@@ -155,6 +161,7 @@ module ex(
     assign reg_wdata_o = reg_wdata | div_wdata;
     // 响应中断时不写通用寄存器
     assign reg_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: (reg_we || div_we);
+    assign freg_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: (freg_we);
     assign reg_waddr_o = reg_waddr | div_waddr;
 
     // 响应中断时不写内存
@@ -171,6 +178,7 @@ module ex(
     assign csr_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: csr_we_i;
     assign csr_waddr_o = csr_waddr_i;
 
+    
 
     // 处理乘法指令
     always @ (*) begin
@@ -248,14 +256,52 @@ module ex(
         end
     end
 
+    // FADDS
+    
+    fpu u_fpu(
+        .
+    )
     // 执行
     always @ (*) begin
         reg_we = reg_we_i;
+        freg_we = freg_we_i;
         reg_waddr = reg_waddr_i;
         mem_req = `RIB_NREQ;
         csr_wdata_o = `ZeroWord;
 
         case (opcode)
+            `INST_FLW : begin
+                jump_flag = `JumpDisable;
+                hold_flag = `HoldDisable;
+                jump_addr = `ZeroWord;
+                mem_wdata_o = `ZeroWord;
+                mem_waddr_o = `ZeroWord;
+                mem_we = `WriteDisable;
+                mem_req = `RIB_REQ;
+                mem_raddr_o = op1_add_op2_res;
+                reg_wdata = mem_rdata_i;
+            end
+            `INST_FSW : begin
+                jump_flag = `JumpDisable;
+                hold_flag = `HoldDisable;
+                jump_addr = `ZeroWord;
+                reg_wdata = `ZeroWord;
+                mem_we = `WriteEnable;
+                mem_req = `RIB_REQ;
+                mem_waddr_o = op1_add_op2_res;
+                mem_raddr_o = op1_add_op2_res;
+                mem_wdata_o = reg2_rdata_i;
+            end
+            `INST_FADDS : begin
+                jump_flag = `JumpDisable;
+                hold_flag = `HoldDisable;
+                jump_addr = `ZeroWord;
+                mem_wdata_o = `ZeroWord;
+                mem_raddr_o = `ZeroWord;
+                mem_waddr_o = `ZeroWord;
+                mem_we = `WriteDisable;
+                reg_wdata = op1_fadd_op2_res;
+            end
             `INST_TYPE_I: begin
                 case (funct3)
                     `INST_ADDI: begin
