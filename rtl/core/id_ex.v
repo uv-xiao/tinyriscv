@@ -79,7 +79,7 @@ module id_ex(
     assign reg_we_o = reg_we;
 
     wire freg_we;
-    gen_pipe_dff #(1) reg_we_ff(clk, rst, hold_en, `WriteDisable, freg_we_i, freg_we);
+    gen_pipe_dff #(1) freg_we_ff(clk, rst, hold_en, `WriteDisable, freg_we_i, freg_we);
     assign freg_we_o = freg_we;
 
     wire[`RegAddrBus] reg_waddr;

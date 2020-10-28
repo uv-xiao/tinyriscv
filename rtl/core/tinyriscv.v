@@ -61,6 +61,7 @@ module tinyriscv(
     wire[`RegBus] id_reg1_rdata_o;
     wire[`RegBus] id_reg2_rdata_o;
     wire id_reg_we_o;
+    wire id_freg_we_o;
     wire[`RegAddrBus] id_reg_waddr_o;
     wire[`MemAddrBus] id_csr_raddr_o;
     wire id_csr_we_o;
@@ -292,14 +293,19 @@ module tinyriscv(
         .inst_addr_i(if_inst_addr_o),
         .reg1_rdata_i(regs_rdata1_o),
         .reg2_rdata_i(regs_rdata2_o),
+        .freg1_rdata_i(fregs_rdata1_o),
+        .freg2_rdata_i(fregs_rdata2_o),
         .ex_jump_flag_i(ex_jump_flag_o),
         .reg1_raddr_o(id_reg1_raddr_o),
         .reg2_raddr_o(id_reg2_raddr_o),
+        .freg1_raddr_o(id_freg1_raddr_o),
+        .freg2_raddr_o(id_freg2_raddr_o),
         .inst_o(id_inst_o),
         .inst_addr_o(id_inst_addr_o),
         .reg1_rdata_o(id_reg1_rdata_o),
         .reg2_rdata_o(id_reg2_rdata_o),
         .reg_we_o(id_reg_we_o),
+        .freg_we_o(id_freg_we_o),
         .reg_waddr_o(id_reg_waddr_o),
         .op1_o(id_op1_o),
         .op2_o(id_op2_o),
@@ -320,6 +326,7 @@ module tinyriscv(
         .inst_addr_i(id_inst_addr_o),
         .bp_result_i(if_bp_result_o),
         .reg_we_i(id_reg_we_o),
+        .freg_we_i(id_freg_we_o),
         .reg_waddr_i(id_reg_waddr_o),
         .reg1_rdata_i(id_reg1_rdata_o),
         .reg2_rdata_i(id_reg2_rdata_o),
@@ -328,6 +335,7 @@ module tinyriscv(
         .inst_addr_o(ie_inst_addr_o),
         .bp_result_o(ie_bp_result_o),
         .reg_we_o(ie_reg_we_o),
+        .freg_we_o(ie_freg_we_o),
         .reg_waddr_o(ie_reg_waddr_o),
         .reg1_rdata_o(ie_reg1_rdata_o),
         .reg2_rdata_o(ie_reg2_rdata_o),
@@ -354,6 +362,7 @@ module tinyriscv(
         .inst_addr_i(ie_inst_addr_o),
         .inst_addr_o(ex_inst_addr_o),
         .reg_we_i(ie_reg_we_o),
+        .freg_we_i(ie_freg_we_o),
         .reg_waddr_i(ie_reg_waddr_o),
         .reg1_rdata_i(ie_reg1_rdata_o),
         .reg2_rdata_i(ie_reg2_rdata_o),
@@ -369,6 +378,7 @@ module tinyriscv(
         .mem_req_o(ex_mem_req_o),
         .reg_wdata_o(ex_reg_wdata_o),
         .reg_we_o(ex_reg_we_o),
+        .freg_we_o(ex_freg_we_o),
         .reg_waddr_o(ex_reg_waddr_o),
         .hold_flag_o(ex_hold_flag_o),
         .jump_flag_o(ex_jump_flag_o),

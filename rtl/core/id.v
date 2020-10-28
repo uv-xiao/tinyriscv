@@ -82,8 +82,8 @@ module id(
     always @ (*) begin
         inst_o = inst_i;
         inst_addr_o = inst_addr_i;
-        reg1_rdata_o = inst_float ? freg1_rdata_i : reg1_rdata_i;
-        reg2_rdata_o = inst_float ? freg2_rdata_i : reg2_rdata_i;
+        reg1_rdata_o = (opcode == `INST_FADDS) ? freg1_rdata_i : reg1_rdata_i;
+        reg2_rdata_o = (opcode == `INST_FADDS || opcode == `INST_FSW) ? freg2_rdata_i : reg2_rdata_i;
         csr_rdata_o = csr_rdata_i;
         csr_raddr_o = `ZeroWord;
         csr_waddr_o = `ZeroWord;
@@ -97,23 +97,23 @@ module id(
             `INST_FLW: begin
                 freg_we_o = `WriteEnable;
                 reg_we_o = `WriteDisable;
-                freg1_raddr_o = rs1;
-                freg2_raddr_o = `ZeroReg;
-                reg1_raddr_o = `ZeroReg;
+                reg1_raddr_o = rs1;
                 reg2_raddr_o = `ZeroReg;
+                freg2_raddr_o = `ZeroReg;
+                freg1_raddr_o = `ZeroReg;
                 reg_waddr_o = rd;
                 op1_o = reg1_rdata_i;
                 op2_o = {{20{inst_i[31]}}, inst_i[31:20]};
             end
             `INST_FSW: begin
-                freg1_raddr_o = rs1;
+                reg1_raddr_o = rs1;
                 freg2_raddr_o = rs2;
-                reg1_raddr_o = `ZeroReg;
+                freg1_raddr_o = `ZeroReg;
                 reg2_raddr_o = `ZeroReg;
                 reg_we_o = `WriteDisable;
                 freg_we_o = `WriteDisable;
                 reg_waddr_o = `ZeroReg;
-                op1_o = freg1_rdata_i;
+                op1_o = reg1_rdata_i;
                 op2_o = {{20{inst_i[31]}}, inst_i[31:25], inst_i[11:7]};
             end
             `INST_FADDS: begin

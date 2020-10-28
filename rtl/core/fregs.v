@@ -1,7 +1,7 @@
 `include "defines.v"
 
 // 通用寄存器模块
-module regs(
+module fregs(
 
     input wire clk,
     input wire rst,

@@ -58,9 +58,9 @@
 `define Hold_Id   3'b011
 
 // F type inst
-`define INST_FLW  7'0000111
-`define INST_FSW  7'0100111
-`define INST_FADDS  7'1010011
+`define INST_FLW  7'b0000111
+`define INST_FSW  7'b0100111
+`define INST_FADDS  7'b1010011
 
 // I type inst
 `define INST_TYPE_I 7'b0010011

@@ -15,7 +15,6 @@
  */
 
 `include "defines.v"
-`include "fpu.v"
 
 // 执行模块
 // 纯组合逻辑电路
@@ -258,9 +257,12 @@ module ex(
 
     // FADDS
     
-    fpu u_fpu(
-        .
-    )
+    adder u_adder(
+        .a(op1_i),
+        .b(op2_i),
+        .z(op1_fadd_op2_res)
+    );
+
     // 执行
     always @ (*) begin
         reg_we = reg_we_i;
